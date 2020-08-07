@@ -2,6 +2,10 @@ import os
 from flask import Flask, request, abort, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
+from werkzeug.wrappers import BaseRequest
+from werkzeug.wsgi import responder
+from werkzeug.exceptions import HTTPException, NotFound
+
 import random
 
 from sqlalchemy import func
@@ -234,11 +238,11 @@ def create_app(test_config=None):
         body = request.get_json()
         previous_questions = body.get('previous_questions', None)
         quiz_category = body.get('quiz_category', None)
-
+        print(quiz_category)
         # Get questions either by category or all
-        if quiz_category:
+        if quiz_category['id'] != 0:
             questions = Question.query\
-                .filter(Question.category == quiz_category)\
+                .filter(Question.category == quiz_category['id'])\
                 .filter(~Question.id.in_(previous_questions))
         else:
             questions = Question.query\
@@ -250,10 +254,10 @@ def create_app(test_config=None):
         # Get a list of all the filtered IDs in order to select a random
         # number from it
         random_list = [question.id for question in questions]
-
+        print(random_list)
+        random_id = random.choice(random_list)
         # Select one random question against the random list
-        question = questions.filter(
-            Question.id == random.choice(random_list)).first()
+        question = Question.query.get(random_id)
 
         return jsonify({
             'success': True,
@@ -289,4 +293,18 @@ def create_app(test_config=None):
             "message": "bad request"
         }), 400
 
+    def view(request):
+        raise NotFound()
+
+    @responder
+    def application(environ, start_response):
+        request = BaseRequest(environ)
+        try:
+            return view(request)
+        except NotFound as e:
+            return not_found(request)
+        except HTTPException as e:
+            return e
+
     return app
+
