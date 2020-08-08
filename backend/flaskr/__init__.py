@@ -245,7 +245,7 @@ def create_app(test_config=None):
         previous_questions = body.get('previous_questions', None)
         quiz_category = body.get('quiz_category', None)
 
-        if not quiz_category or not previous_questions:
+        if previous_questions is None or quiz_category is None:
             abort(422)
 
         # Get questions either by category or all
