@@ -48,6 +48,13 @@ class TriviaTestCase(unittest.TestCase):
         self.assertTrue(data['total_categories'])
         self.assertTrue(len(data['categories']))
 
+    def test_404_get_wrong_endpoint(self):
+        res = self.client().get('/wrong_endpoint_path')
+        data = json.loads(res.data)
+        self.assertEqual(data['success'], False)
+        self.assertEqual(data['message'], 'resource not found')
+        self.assertEqual(res.status_code, 404)
+
     def test_get_paginated_questions(self):
         res = self.client().get('/questions')
         data = json.loads(res.data)
@@ -97,6 +104,17 @@ class TriviaTestCase(unittest.TestCase):
         self.assertTrue(data['created'])
         self.assertTrue(len(data['questions']))
 
+    def test_create_new_question_failure(self):
+        res = self.client().post('/questions', json={
+            "category": 2,
+            "difficulty": 1
+        })
+        data = json.loads(res.data)
+
+        self.assertEqual(res.status_code, 422)
+        self.assertEqual(data['success'], False)
+        self.assertEqual(data['message'], 'unprocessable')
+
     def test_get_question_search_with_result(self):
         res = self.client().post('/questions', json={'searchTerm': 'title'})
         data = json.loads(res.data)
@@ -131,7 +149,7 @@ class TriviaTestCase(unittest.TestCase):
     def test_get_questions_by_quizzes(self):
         res = self.client().post('/quizzes', json={
             "previous_questions": [1, 2, 3],
-            "quiz_category": 4
+            "quiz_category": Category.query.first().format()
         })
         question = Question.query.filter(Question.category == 4).filter(Question.id > 3).first()
         data = json.loads(res.data)
@@ -139,6 +157,14 @@ class TriviaTestCase(unittest.TestCase):
         self.assertEqual(data['success'], True)
         self.assertTrue(data['question'])
         self.assertEqual(len(data['question']), question.id)
+
+    def test_get_questions_by_quizzes_failure(self):
+        res = self.client().post('/quizzes', json={})
+        question = Question.query.filter(Question.category == 4).filter(Question.id > 3).first()
+        data = json.loads(res.data)
+        self.assertEqual(res.status_code, 422)
+        self.assertEqual(data['success'], False)
+        self.assertEqual(data['message'], 'unprocessable')
 
 
 # Make the tests conveniently executable

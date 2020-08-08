@@ -47,10 +47,10 @@ def create_app(test_config=None):
     def after_request(response):
         response.headers.add(
             'Access-Control-Allow-Headers', 'Content-Type,Authorization,true'
-            )
+        )
         response.headers.add(
             'Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS'
-            )
+        )
         return response
 
     '''
@@ -167,6 +167,10 @@ def create_app(test_config=None):
         try:
             # if json body contains no search, a new question will be created
             if not search:
+                if question is None or answer is None \
+                        or category is None or difficulty is None:
+                    abort(422)
+
                 new_question = Question(
                     question=question,
                     answer=answer,
@@ -205,6 +209,7 @@ def create_app(test_config=None):
     categories in the left column will cause only questions of that
     category to be shown.
     '''
+
     @app.route('/categories/<int:category_id>/questions')
     def get_category_questions(category_id):
         selection = Question.query.order_by(Question.id).filter(
@@ -233,19 +238,23 @@ def create_app(test_config=None):
     one question at a time is displayed, the user is allowed to answer
     and shown whether they were correct or not.
     '''
+
     @app.route('/quizzes', methods=['POST'])
     def retrieve_quizzes():
         body = request.get_json()
         previous_questions = body.get('previous_questions', None)
         quiz_category = body.get('quiz_category', None)
-        print(quiz_category)
+
+        if not quiz_category or not previous_questions:
+            abort(422)
+
         # Get questions either by category or all
         if quiz_category['id'] != 0:
-            questions = Question.query\
-                .filter(Question.category == quiz_category['id'])\
+            questions = Question.query \
+                .filter(Question.category == quiz_category['id']) \
                 .filter(~Question.id.in_(previous_questions))
         else:
-            questions = Question.query\
+            questions = Question.query \
                 .filter(~Question.id.in_(previous_questions))
 
         if not questions:
@@ -269,6 +278,7 @@ def create_app(test_config=None):
     Create error handlers for all expected errors
     including 404 and 422.
     '''
+
     @app.errorhandler(404)
     def not_found(error):
         return jsonify({
@@ -307,4 +317,3 @@ def create_app(test_config=None):
             return e
 
     return app
-
