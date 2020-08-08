@@ -18,9 +18,9 @@ class TriviaTestCase(unittest.TestCase):
         # Please change the below settings to work on your own machine
         self.username = "postgres"
         self.password = "wwzzaahh"
-        self.database_path = f"postgresql+psycopg2://{self.username}:{self.password}@localhost:5432/{self.database_name}"
+        self.database_path = f"postgresql+psycopg2://{self.username}:{self.password}@localhost:5432/{self.database_name}"  # NOQA
 
-        # self.database_path = "postgres://{}/{}".format('localhost:5432', self.database_name)
+        # self.database_path = "postgres://{}/{}"\.format('localhost:5432', self.database_name) # NOQA
         setup_db(self.app, self.database_path)
 
         # binds the app to the current context
@@ -36,7 +36,8 @@ class TriviaTestCase(unittest.TestCase):
 
     """
     TODO
-    Write at least one test for each test for successful operation and for expected errors.
+    Write at least one test for each test for successful operation
+    and for expected errors.
     """
 
     def test_get_categories(self):
@@ -124,7 +125,7 @@ class TriviaTestCase(unittest.TestCase):
         self.assertEqual(len(data['questions']), 2)
 
     def test_get_question_search_without_result(self):
-        res = self.client().post('/questions', json={'searchTerm': 'applejack'})
+        res = self.client().post('/questions', json={'searchTerm': 'applejac'})
         data = json.loads(res.data)
         self.assertEqual(res.status_code, 200)
         self.assertEqual(data['success'], True)
@@ -151,7 +152,8 @@ class TriviaTestCase(unittest.TestCase):
             "previous_questions": [1, 2, 3],
             "quiz_category": Category.query.first().format()
         })
-        question = Question.query.filter(Question.category == 4).filter(Question.id > 3).first()
+        question = Question.query.filter(
+            Question.category == 4).filter(Question.id > 3).first()
         data = json.loads(res.data)
         self.assertEqual(res.status_code, 200)
         self.assertEqual(data['success'], True)
@@ -160,7 +162,8 @@ class TriviaTestCase(unittest.TestCase):
 
     def test_get_questions_by_quizzes_failure(self):
         res = self.client().post('/quizzes', json={})
-        question = Question.query.filter(Question.category == 4).filter(Question.id > 3).first()
+        question = Question.query.filter(
+            Question.category == 4).filter(Question.id > 3).first()
         data = json.loads(res.data)
         self.assertEqual(res.status_code, 422)
         self.assertEqual(data['success'], False)
